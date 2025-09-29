@@ -23,17 +23,20 @@ class WeatherViewModel: ObservableObject {
 
         Task {
             do {
-                let (data, _) = try await URLSession.shared.data(from: url)
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("📡 Status Code: \(httpResponse.statusCode)")
+                }
+                
                 let decoded = try JSONDecoder().decode(WeatherResponse.self, from: data)
+                
                 DispatchQueue.main.async {
                     self.weather = decoded
-                    self.errorMessage = nil
                 }
+                
             } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "⚠️ Could not fetch weather. Check city name or internet."
-                    self.weather = nil
-                }
+                print("❌ Error fetching weather:", error.localizedDescription)
             }
         }
     }

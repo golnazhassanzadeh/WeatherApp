@@ -10,7 +10,7 @@ import Foundation
 struct WeatherResponse: Codable ,Equatable {
     let name: String
     let main: Main
-    let weather: [Weather]
+    let weather: [CurrentWeather]
     let wind: Wind
 }
 
@@ -19,7 +19,7 @@ struct Main: Codable ,Equatable{
     let feels_like: Double
 }
 
-struct Weather: Codable,Equatable {
+struct CurrentWeather: Codable,Equatable {
     let description: String
     let icon: String
 }
