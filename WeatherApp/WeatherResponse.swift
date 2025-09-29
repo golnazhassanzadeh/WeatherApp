@@ -16,7 +16,6 @@ struct WeatherResponse: Codable ,Equatable {
 
 struct Main: Codable ,Equatable{
     let temp: Double
-    let feels_like: Double
 }
 
 struct CurrentWeather: Codable,Equatable {

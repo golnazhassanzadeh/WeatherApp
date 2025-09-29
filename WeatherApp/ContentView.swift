@@ -15,25 +15,23 @@ struct ContentView: View {
 
 
     var body: some View {
-        NavigationStack {
-            
-        ZStack {
-            // 🌄 Dynamic background based on weather description
-            Image(backgroundImageName(for: viewModel.weather?.weather.first?.description ?? ""))
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea(.all)
-                .transition(.opacity)
-                .animation(.easeInOut(duration: 0.5), value: viewModel.weather?.weather.first?.description)
-
-        
+        NavigationView{
+            ZStack{
+                // 🌄 Dynamic background based on weather description
+                Image(backgroundImageName(for: viewModel.weather?.weather.first?.description ?? ""))
+                    .resizable()
+                    .scaledToFill()
+                    .edgesIgnoringSafeArea(.all)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.5), value: viewModel.weather?.weather.first?.description)
+                
                 VStack(spacing: 40) {
                     TextField("Enter city name", text: $city)
                         .padding()
                         .background(Color.white.opacity(0.7))
                         .cornerRadius(10)
                         .frame(maxWidth: .infinity)
-
+                    
                     Button("Get Weather") {
                         showWeatherDetails = false
                         viewModel.fetchWeather(for: city)
@@ -43,16 +41,17 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                     
-
+                    
                     if let weather = viewModel.weather , showWeatherDetails{
                         VStack(spacing: 8) {
                             Text("🌍 City: \(weather.name)")
+                                .padding(1)
                             Text("🌡️ Temperature: \(weather.main.temp, specifier: "%.1f")°C")
-                            Text("\(emojiForFeelsLike(weather.main.feels_like)) Feels Like: \(weather.main.feels_like, specifier: "%.1f")°C")
-
+                                .padding(.top)
+                            
                             HStack {
                                 Text("☁️ Description: \(weather.weather.first?.description ?? "-")")
-
+                                
                                 if let icon = weather.weather.first?.icon {
                                     let url = URL(string: "https://openweathermap.org/img/wn/\(icon)@2x.png")
                                     AsyncImage(url: url) { image in
@@ -60,16 +59,14 @@ struct ContentView: View {
                                             .resizable()
                                             .frame(width: 40, height: 40)
                                     } placeholder: {
-                                        Image(systemName: "cloud.sun.fill") // آیکون عمومی
+                                        Image(systemName: "cloud.sun.fill")
                                             .resizable()
                                             .frame(width: 40, height: 40)
                                             .foregroundColor(.gray)
                                             .opacity(0.5)
                                     }
-
                                 }
                             }
-
                             Text("💨 Wind Speed: \(weather.wind.speed, specifier: "%.1f") m/s")
                         }
                         .padding()
@@ -79,52 +76,48 @@ struct ContentView: View {
                         .padding(.horizontal)
                         .transition(.move(edge: .bottom))
                         .animation(.easeInOut(duration: 0.5), value: viewModel.weather?.name)
+                        NavigationLink("7-Day Forecast") {
+                            ForecastView(city: city)
+                        }
+                        .padding()
+                        .background(Color.blue.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
                         
                     } else {
                         Text("Please enter a city and tap the button")
                             .foregroundColor(.white)
                             .padding()
                     }
-
-                    NavigationLink("7-Day Forecast") {
-                        ForecastView(city: city)
+                }
+            }
+            .onAppear {
+                if let gpsCity = locationManager.city {
+                    city = gpsCity
+                    viewModel.fetchWeather(for: gpsCity)
+                }
+            }
+            .onReceive(locationManager.$city) { gpsCity in
+                if let gpsCity = gpsCity {
+                    city = gpsCity
+                    showWeatherDetails = false
+                    viewModel.fetchWeather(for: gpsCity)
+                }
+            }
+            .onChange(of: viewModel.weather) {
+                if viewModel.weather != nil {
+                    withAnimation {
+                        showWeatherDetails = true
                     }
+                }
+            }
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .foregroundColor(.red)
                     .padding()
-                    .background(Color.blue.opacity(0.8))
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
+                    .multilineTextAlignment(.center)
             }
         }
-        .onAppear {
-            if let gpsCity = locationManager.city {
-                city = gpsCity
-                viewModel.fetchWeather(for: gpsCity)
-            }
-        }
-        .onReceive(locationManager.$city) { gpsCity in
-            if let gpsCity = gpsCity {
-                city = gpsCity
-                showWeatherDetails = false
-                viewModel.fetchWeather(for: gpsCity)
-            }
-        }
-        .onChange(of: viewModel.weather) {
-            if viewModel.weather != nil {
-                withAnimation {
-                    showWeatherDetails = true
-                }
-            }
-        }
-
-
-        if let error = viewModel.errorMessage {
-            Text(error)
-                .foregroundColor(.red)
-                .padding()
-                .multilineTextAlignment(.center)
-        }
-
     }
 
     //  Choose background based on weather description
@@ -146,23 +139,6 @@ struct ContentView: View {
             return "weatherBackground" // default fallback
         }
     }
-    func emojiForFeelsLike(_ temp: Double) -> String {
-        switch temp {
-        case ..<0:
-            return "🥶" // خیلی سرد
-        case 0..<10:
-            return "🧥" // خنک
-        case 10..<20:
-            return "🙂" // معتدل
-        case 20..<30:
-            return "😎" // گرم خوب
-        case 30..<40:
-            return "🥵" // گرم زیاد
-        default:
-            return "🔥" // خیلی داغ
-        }
-    }
-
 }
 
 
